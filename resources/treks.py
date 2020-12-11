@@ -28,3 +28,9 @@ def create_treks():
     # Change the model to a dict
     song_dict = model_to_dict(trek)
     return jsonify(data=song_dict, status={"code": 201, "message": "Success"})
+
+@trek.route('/<id>', methods=["Delete"])
+def delete_trek(id):
+    query = models.Trek.delete().where(models.Trek.id==id)
+    query.execute()
+    return jsonify(data='resource successfully deleted', status={"code": 200, "message": "resource deleted successfully"})
