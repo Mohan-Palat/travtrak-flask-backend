@@ -18,6 +18,15 @@ def get_all_treks():
     except models.DoesNotExist:
         return jsonify(data={}, status={"code": 401, "message": "Error getting the resources"})
 
+@trek.route('/<id>', methods=["GET"])
+def get_trek_detail(id):
+    ## find the treks and change each one to a dictionary into a new array
+    try:
+        trek = [model_to_dict(trek) for trek in models.Trek.select().where(models.Trek.id==id)]
+        return jsonify(data=trek, status={"code": 200, "message": "Success"})
+    except models.DoesNotExist:
+        return jsonify(data={}, status={"code": 401, "message": "Error getting the resources"})
+
 @trek.route('/', methods=["POST"])
 def create_treks():
     ## see request payload anagolous to req.body in express
@@ -34,3 +43,11 @@ def delete_trek(id):
     query = models.Trek.delete().where(models.Trek.id==id)
     query.execute()
     return jsonify(data='resource successfully deleted', status={"code": 200, "message": "resource deleted successfully"})
+
+@trek.route('/<id>', methods=["PUT"])
+def update_trek(id):
+    payload = request.get_json()
+    print(payload)
+    query = models.Trek.update(**payload).where(models.Trek.id==id)
+    query.execute()
+    return jsonify(data=model_to_dict(models.Trek.get_by_id(id)), status={"code": 200, "message": "resource updated successfully"})
