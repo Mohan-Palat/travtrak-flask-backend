@@ -11,7 +11,6 @@ from playhouse.shortcuts import model_to_dict
 trek = Blueprint('treks', 'trek')
 
 @trek.route('/', methods=["GET"])
-# @login_required
 def get_all_treks():
     ## find the treks and change each one to a dictionary into a new array
     try:

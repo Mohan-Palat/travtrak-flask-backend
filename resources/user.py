@@ -5,12 +5,14 @@ from flask_bcrypt import generate_password_hash, check_password_hash
 from flask_login import login_user, current_user
 from playhouse.shortcuts import model_to_dict
 from flask_login import current_user, login_required, logout_user
+from flask_httpauth import HTTPTokenAuth
 
 
 
 # first argument is blueprints name
 # second argument is it's import_name
 user = Blueprint('users', 'user')
+auth = HTTPTokenAuth(scheme='Bearer')
 
 @user.route('/register', methods=["POST"])
 def register():
@@ -48,17 +50,52 @@ def login():
         user = models.User.get(models.User.email== payload['email']) ### Try find the user by thier email
         user_dict = model_to_dict(user) # if you find the User model convert in to a dictionary so you can access it
         if(check_password_hash(user_dict['password'], payload['password'])): # use bcyrpts check password to see if passwords match
+            token = user.generate_auth_token().decode('utf-8')
             del user_dict['password'] # delete the password
             login_user(user) # setup the session
             print(user, ' this is user')
-            return jsonify(data=user_dict, status={"code": 200, "message": "Success"}) # respond to the client
+            return jsonify(data={"user": user_dict, "token": token}, status={"code": 200, "message": "Success"}) # respond to the client
         else:
             return jsonify(data={}, status={"code": 401, "message": "Username or Password is incorrect"})
     except models.DoesNotExist:
         return jsonify(data={}, status={"code": 401, "message": "Username or Password is incorrect"})
 
+@auth.verify_token
+def verify_token(token):
+    if token in tokens:
+        return tokens[token]
+
 @user.route("/logout")
-@login_required
+# @login_required
 def logout():
     logout_user()
     return 'you are logged out'
+
+   # teaching tool -- route to show which user is logged in
+# demonstrating how to use current_user
+# this requires user_loader to be set up in app.py
+@user.route('/logged_in', methods=['GET'])
+def get_logged_in_user():
+  # READ THIS https://flask-login.readthedocs.io/en/latest/#flask_login.current_user
+  # because we called login_user and set up user_loader
+  # print(current_user) # this is the logged in user
+  # print(type(current_user)) # <class 'werkzeug.local.LocalProxy'> -- Google it if you're interested
+  # user_dict = model_to_dict(current_user)
+  # print(user_dict)
+  # return jsonify(data=user_dict), 200 # should have been jsonify all along 
+  # you can TELL WHETHER A USER IS LOGGED IN with current_user.is_authenticated 
+  # (search current_user.is_authenticated in docs)
+  if not current_user.is_authenticated:
+    return jsonify(
+        data={},
+        message="No user is currently logged in",
+        status=401
+      ), 401
+  else: # current user is logged in
+    user_dict = model_to_dict(current_user)
+    user_dict.pop('password')
+    return jsonify(
+        data=user_dict,
+        message=f"Current user is {user_dict['email']}",
+        status=200
+      ), 200
