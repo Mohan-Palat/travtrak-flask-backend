@@ -1,18 +1,13 @@
 import models
-
 from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
-
 from playhouse.shortcuts import model_to_dict
 
 
-# first argument is blueprints name
-# second argument is it's import_name
 trek = Blueprint('treks', 'trek')
 
 @trek.route('/', methods=["GET"])
 def get_all_treks():
-    ## find the treks and change each one to a dictionary into a new array
     try:
         treks = [model_to_dict(trek) for trek in models.Trek.select()]
         return jsonify(data=treks, status={"code": 200, "message": "Success"})
@@ -21,7 +16,6 @@ def get_all_treks():
 
 @trek.route('/<id>', methods=["GET"])
 def get_trek_detail(id):
-    ## find the treks and change each one to a dictionary into a new array
     try:
         trek = [model_to_dict(trek) for trek in models.Trek.select().where(models.Trek.id==id)]
         return jsonify(data=trek, status={"code": 200, "message": "Success"})
@@ -30,12 +24,8 @@ def get_trek_detail(id):
 
 @trek.route('/', methods=["POST"])
 def create_treks():
-    ## see request payload anagolous to req.body in express
     payload = request.get_json()
     trek = models.Trek.create(**payload)
-    ## see the object
-    ## Look at all the methods
-    # Change the model to a dict
     song_dict = model_to_dict(trek)
     return jsonify(data=song_dict, status={"code": 201, "message": "Success"})
 
@@ -48,7 +38,6 @@ def delete_trek(id):
 @trek.route('/<id>', methods=["PUT"])
 def update_trek(id):
     payload = request.get_json()
-    print(payload)
     query = models.Trek.update(**payload).where(models.Trek.id==id)
     query.execute()
     return jsonify(data=model_to_dict(models.Trek.get_by_id(id)), status={"code": 200, "message": "resource updated successfully"})
